@@ -7,6 +7,15 @@ def new_game(n):
     return matrix
 
 
+def get_empty_cells(mat):
+    empty_cells = []
+    for i in range(len(mat)):
+        for j in range(len(mat[0])):
+            if (mat[i][j] == 0):
+                empty_cells.append((i, j))
+    return empty_cells
+
+
 # add 2 or 4 in the matrix
 def add_two(mat):
     empty_cells = []
