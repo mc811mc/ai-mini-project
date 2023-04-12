@@ -1,4 +1,5 @@
 from game import *
+
 """_summary_
 TD Learning - afterstate solution
 
@@ -14,13 +15,48 @@ Uses row -tuples to reduce the state space from 16^ 12 to 4* 4^12
 moves = [0, 1, 2, 3]
 
 
-def arr_to_tuple(arr):
-    '''
-    Convert array to tuple
-    '''
-    return tuple(e for e in arr)
 
 
+class score_tracker_full_board:
+    '''
+    score tracker that does not split up board but has all of the same methods'''
+
+    def __init__(self, **args):
+        self.board = {}
+      
+        
+        
+    def get_score(self, board):
+       
+        score_row4 = self.safe_get(board)
+        
+        #Is this correct?
+        return  score_row4
+    
+    def arr_to_tuple(self, arr):
+        tuple(map(tuple, arr))
+        
+        
+    def safe_get(self, arr):
+        s = self.arr_to_tuple(arr)
+        if s in self.board:
+            return self.board[s]
+        return 0.0
+    
+    
+    
+    def safe_set(self, arr, score):
+        s = self.arr_to_tuple(arr)
+        self.board[s] = score
+        
+        
+    def set_score(self,  afterstate, score):
+          
+        
+       # for i in range(4):
+           # score = score_b_rows[i] + alpha*(reward_next + self.safe_get(as_rows[i], self.rows[i]) - score_b_rows[i] )
+            self.safe_set(afterstate, score)
+    
 
 class score_tracker:
     '''
@@ -56,10 +92,14 @@ class score_tracker:
         #Is this correct?
         return score_row1 + score_row2 + score_row3 + score_row4
         
-        
+    def arr_to_tuple(arr):
+        '''
+        Convert array to tuple
+        '''
+        return tuple(e for e in arr)
         
     def safe_get(self, arr, dict):
-        s = arr_to_tuple(arr)
+        s = self.arr_to_tuple(arr)
         if s in dict:
             return dict[s]
         return 0.0
@@ -67,18 +107,18 @@ class score_tracker:
     
     
     def safe_set(self, arr, score, dict):
-        s = arr_to_tuple(arr)
+        s = self.arr_to_tuple(arr)
         dict[s] = score
     
     
     #is this correct?
-    def set_score(self,  afterstate, alpha, reward_next, afterstate_next,score):
+    def set_score(self,  afterstate, score):
         b_rows = [afterstate[0], afterstate[1], afterstate[2], afterstate[3]]
         
         score_b_rows = [self.safe_get(b_rows[0], self.row1), self.safe_get(b_rows[1], self.row2),
                         self.safe_get(b_rows[2], self.row3), self.safe_get(b_rows[3], self.row4)]
         
-        as_rows = [ afterstate_next[0],  afterstate_next[1],  afterstate_next[2],  afterstate_next[3]]
+        #as_rows = [ afterstate_next[0],  afterstate_next[1],  afterstate_next[2],  afterstate_next[3]]
         
        
         '''
@@ -96,17 +136,16 @@ class score_tracker:
 
 
 
-class TDAfterStateLearningAgent:
+class QLearningAgent:
     """
-     TD after state agent
-     
-     score tracker is initiated as well as learning rate (alpha)
+     Q learning agent
+     score tracker is initiated  for each move (1,2,3,4) as well as learning rate (alpha)
      
      get_move_from_score takes a board and returns the best productive
      move. If there are no productive moves then None is returned
     """
     def __init__(self, **args):
-        self.scoreDictionary = score_tracker()
+        self.scoreDictionary = [score_tracker_full_board(),score_tracker_full_board(), score_tracker_full_board(), score_tracker_full_board()]
         self.alpha = 0.1
         
     
@@ -134,56 +173,33 @@ class TDAfterStateLearningAgent:
         
     def evaluate(self,board,action):
         '''
-        V is lookup table
-        s',r = Compute afterstate(s,a)
-        return r + V(s')
+        Gets score of board for a specific action
         '''
-        afterstate, reward_next = perform_move(board, action)
        
-        return self.scoreDictionary.get_score(afterstate) +reward_next
+       
+        return self.scoreDictionary[action].get_score(board) 
     
-    '''def safe_get(self, board):
-        s = arr_to_tuple(board)
-        if s in self.scoreDictionary:
-            return self.scoreDictionary[s]
-        return 0.0
-        '''
+    
          
     
-    def update(self, startState, reward, afterstate, nextState):
+    def update(self, startState, action, reward, nextState):
          '''
-         learning function - get current state weight and update it with the 
-         experienced reward
+         Learning function - V (s) ← V (s) + α(r + V (s'') − V (s))
+         '''
          
+         #Get val of optimal action for actions in s''
+         nextAction =  self.get_move_from_score(nextState)
+         valNext= 0
+         if nextAction != None:
+            valNext = self.evaluate( nextState, nextAction)
+         score = self.scoreDictionary[action].get_score(startState) + self.alpha* (reward + valNext - self.scoreDictionary[action].get_score(startState))
+         self.scoreDictionary[action].set_score(startState, score)
          
-         nextaction = evaluate for each action (nextstate, possibleaction)
-         afterstatenext, rewardnext = compute_afterstate(nextstate, actionnext)
-         V(afterstate) = V(sfterstate)+ alpha(rewardnext + V(afterstatenext)- V(afterstate))'''
-         nextaction = self.get_move_from_score(nextState)
-         afterstate_next = nextState
-         reward_next = 0
-         if nextaction != None:
-            
-            afterstate_next, reward_next = perform_move(nextState, nextaction)
-         #asState = arr_to_tuple(afterstate)
-        #self, score, afterstate, alpha, reward_next, afterstate_next):
-         score = self.scoreDictionary.get_score(afterstate) + self.alpha* (reward_next + self.scoreDictionary.get_score(afterstate_next)- self.scoreDictionary.get_score(afterstate))
-         self.scoreDictionary.set_score(afterstate, self.alpha, reward_next, afterstate_next, score)
-    
+        
 
 
 def play_game(iterations, learning_enabled, agent):
-    '''
-    score = 0
-    s = initialize game state
-    while not in terminal state (s)
-        bestAction = argmax(actions)-Evaluate(s,a')
-        r,s',s'' = make_move(s,bestAction)
-        if learning enabled
-            learn eval(s,bestAction, s',s''
-        score += r
-    return score
-    '''
+   
     scores = np.zeros(iterations)
     for i in range(iterations):
         board = new_game(4)
@@ -203,7 +219,7 @@ def play_game(iterations, learning_enabled, agent):
             nextboard = add_two(afterboard)
            
             if learning_enabled:
-                agent.update(board, new_score, afterboard, nextboard)
+                agent.update(board, bestAction, new_score, nextboard)
             #print(np.array(board))
             #print()
             board = nextboard
@@ -220,8 +236,11 @@ def play_game(iterations, learning_enabled, agent):
             
     print(f'Average score: {scores.mean()}')
     
+    
+    
+    
 def main():
-    agent  = TDAfterStateLearningAgent() 
+    agent  = QLearningAgent() 
     learning_games = 1000
     play_game(learning_games, True, agent)
     print()
