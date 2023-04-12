@@ -1,16 +1,10 @@
 from game import *
 
 moves = [0, 1, 2, 3]
-depth = 3
+depth = 2
 
 
 def get_move(board):
-    """
-    Returns the expectimax action using self.depth and self.evaluationFunction
-
-    All ghosts should be modeled as choosing uniformly at random from their
-    legal moves.
-    """
     max_depth = depth * 3  # 1 max layer (player), 2 expect layers (2 or 4 and placement)
     val, move = max_value(board, 1, max_depth)
     return move
@@ -93,7 +87,7 @@ def evaluation_function(board):
     up_monotonicity = 0
     down_monotonicity = 0
     for j in range(len(board)):
-        for i in range(1, len(board[i])):
+        for i in range(1, len(board[j])):
             if board[i - 1][j] > board[i][j]:
                 up_monotonicity += board[i - 1][j] - board[i][j]
             else:
@@ -104,32 +98,56 @@ def evaluation_function(board):
         vertical_monotonicity = down_monotonicity
 
     # try raising monotonicities to a power to add more weight to larger cells
-    return (300 * num_empty) + (700 * merges) - (50 * horizontal_monotonicity + vertical_monotonicity)
+    return (350 * num_empty) + (800 * merges) - (20 * (horizontal_monotonicity + vertical_monotonicity))
+
+
+def get_max_tile(board):
+    max_tile = 0
+    for i in range(len(board)):
+        for j in range(len(board[i])):
+            if board[i][j] > max_tile:
+                max_tile = board[i][j]
+    return max_tile
 
 
 def main():
-    iterations = 10
+    iterations = 100
     scores = np.zeros(iterations)
+    max_tiles = np.zeros(iterations)
     for i in range(iterations):
         board = new_game(4)
         board = add_two(board)
         board = add_two(board)
         lost = False
-        print(board)
-        print()
+        # print(board)
+        # print()
         while not lost:
-            board, new_score = perform_move(board, get_move(board))
+            move = get_move(board)
+            if move is None:
+                print('None move:')
+                print(board)
+            board, new_score = perform_move(board, move)
             scores[i] += new_score
             board = add_two(board)
-            print(np.array(board))
-            print()
+            # print(np.array(board))
+            # print()
             if game_state(board) == 'lose':
-                print(np.array(board))
-                print()
-                print(f"Game {i} score: {scores[i]}")
-                print()
+                # print(np.array(board))
+                # print()
+                # print(f"Game {i} score: {scores[i]}")
+                # print()
+                print(f'Game {i} complete.')
+                max_tiles[i] = get_max_tile(board)
                 lost = True
+    print(f'Scores: {scores}')
+    print(f'Max tiles: {max_tiles}')
     print(f'Average score: {scores.mean()}')
+    print(f'Standard Deviation of scores: {scores.std()}')
+    print('How often agent reached tile:')
+    tile = int(max_tiles.max())
+    while tile >= 2:
+        print(f'{tile}: {np.sum(max_tiles >= tile) / iterations}')
+        tile = int(tile / 2)
 
 
 if __name__ == "__main__":
