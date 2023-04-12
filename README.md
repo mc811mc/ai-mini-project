@@ -1,4 +1,7 @@
 ﻿# ai-mini-project
+ # Building an Expert Agent for 2048
+
+Leveraging AI Algorithms and Game Theory Optimization Solutions for Maximizing Score
 
 Introduction:
 
