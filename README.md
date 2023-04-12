@@ -7,3 +7,6 @@ The game 2048 is a popular web based and mobile puzzle game. The objective of th
 Problem Statement:
 
 For our project we plan to build an expert agent that can play the game 2048. We aim to develop an AI agent that can maximize its score by deciding on the optimal move each turn. The agent should be able to handle the constraints of the game, such as the space available on the board, and the randomness of the tile generation while also achieving its performance related objectives. Options for agent design will be implemented and assessed to determine the most optimal agent design to play the game 2048.
+
+Cont...
+Refer to Final Report PDF
