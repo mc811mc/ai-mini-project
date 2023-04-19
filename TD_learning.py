@@ -12,6 +12,8 @@ Uses row -tuples to reduce the state space from 16^ 12 to 4* 4^12
 
 
 moves = [0, 1, 2, 3]
+learning_games = 100
+real_games = 30
 
 
 def arr_to_tuple(arr):
@@ -20,6 +22,47 @@ def arr_to_tuple(arr):
     '''
     return tuple(e for e in arr)
 
+
+class score_tracker_full_board:
+    '''
+    score tracker that does not split up board but has all of the same methods'''
+
+    def __init__(self, **args):
+        self.board = {}
+      
+        
+        
+    def get_score(self, board):
+       
+        score_row4 = self.safe_get(board)
+        
+        #Is this correct?
+        return  score_row4
+    
+    def arr_to_tuple(self, arr):
+       return tuple(map(tuple, arr))
+        
+        
+    def safe_get(self, arr):
+        s = self.arr_to_tuple(arr)
+        if s in self.board:
+            return self.board[s]
+        return 0.0
+    
+    
+    
+    def safe_set(self, arr, score):
+        s = self.arr_to_tuple(arr)
+        self.board[s] = score
+        
+        
+    def set_score(self,  afterstate, score):
+          
+        
+       # for i in range(4):
+           # score = score_b_rows[i] + alpha*(reward_next + self.safe_get(as_rows[i], self.rows[i]) - score_b_rows[i] )
+            self.safe_set(afterstate, score)
+    
 
 
 class score_tracker:
@@ -106,8 +149,8 @@ class TDAfterStateLearningAgent:
      move. If there are no productive moves then None is returned
     """
     def __init__(self, **args):
-        self.scoreDictionary = score_tracker()
-        self.alpha = 0.1
+        self.scoreDictionary = score_tracker_full_board()
+        self.alpha = 0.0025
         
     
     def get_move_from_score(self, board):
@@ -125,9 +168,7 @@ class TDAfterStateLearningAgent:
             if new_score > score:
                 bestAction = move
                 score = new_score
-            if new_score == score:
-                choice = random.choice([move, bestAction]) 
-                bestAction = choice
+            
         
         return bestAction
     
@@ -142,12 +183,7 @@ class TDAfterStateLearningAgent:
        
         return self.scoreDictionary.get_score(afterstate) +reward_next
     
-    '''def safe_get(self, board):
-        s = arr_to_tuple(board)
-        if s in self.scoreDictionary:
-            return self.scoreDictionary[s]
-        return 0.0
-        '''
+   
          
     
     def update(self, startState, reward, afterstate, nextState):
@@ -168,8 +204,18 @@ class TDAfterStateLearningAgent:
          #asState = arr_to_tuple(afterstate)
         #self, score, afterstate, alpha, reward_next, afterstate_next):
          score = self.scoreDictionary.get_score(afterstate) + self.alpha* (reward_next + self.scoreDictionary.get_score(afterstate_next)- self.scoreDictionary.get_score(afterstate))
-         self.scoreDictionary.set_score(afterstate, self.alpha, reward_next, afterstate_next, score)
+         self.scoreDictionary.set_score(afterstate, score)
     
+
+
+def get_max_tile(board):
+    max_tile = 0
+    for i in range(len(board)):
+        for j in range(len(board[i])):
+            if board[i][j] > max_tile:
+                max_tile = board[i][j]
+    return max_tile
+
 
 
 def play_game(iterations, learning_enabled, agent):
@@ -184,6 +230,7 @@ def play_game(iterations, learning_enabled, agent):
         score += r
     return score
     '''
+    max_tiles = np.zeros(iterations)
     scores = np.zeros(iterations)
     for i in range(iterations):
         board = new_game(4)
@@ -192,9 +239,7 @@ def play_game(iterations, learning_enabled, agent):
         lost = False
         #print(board)
         #print()
-        while not lost:
-          
-                
+        while not lost:     
             bestAction = agent.get_move_from_score(board)
             # r = new_score, s' = board = afterstate
             afterboard, new_score = perform_move(board, bestAction)
@@ -211,22 +256,30 @@ def play_game(iterations, learning_enabled, agent):
             if game_state(board) == 'lose':
                     #print(np.array(board))
                 #print()
-                print(f"Game {i} score: {scores[i]}")
+                if i % 1000 == 0:
+                    print(f"Game {i} score: {scores[i]}")
                 #print()
-                
-                print(np.array(board))
+                max_tiles[i] = get_max_tile(board)
+               
                 lost = True
                 continue
-            
+    print(f'Scores: {scores}')
+    print(f'Max tiles: {max_tiles}')
     print(f'Average score: {scores.mean()}')
+    print(f'Standard Deviation of scores: {scores.std()}')
+    print('How often agent reached tile:')
+    tile = int(max_tiles.max())
+    while tile >= 2:
+        print(f'{tile}: {np.sum(max_tiles >= tile) / iterations}')
+        tile = int(tile / 2)
     
 def main():
     agent  = TDAfterStateLearningAgent() 
-    learning_games = 1000
+    
     play_game(learning_games, True, agent)
     print()
     print()
-    real_games = 30
+    
     play_game(real_games, False, agent)
    
 

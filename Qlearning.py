@@ -13,6 +13,8 @@ Uses row -tuples to reduce the state space from 16^ 12 to 4* 4^12
 
 
 moves = [0, 1, 2, 3]
+learning_games = 10000
+real_games = 30
 
 
 
@@ -34,7 +36,7 @@ class score_tracker_full_board:
         return  score_row4
     
     def arr_to_tuple(self, arr):
-        tuple(map(tuple, arr))
+       return tuple(map(tuple, arr))
         
         
     def safe_get(self, arr):
@@ -146,7 +148,7 @@ class QLearningAgent:
     """
     def __init__(self, **args):
         self.scoreDictionary = [score_tracker_full_board(),score_tracker_full_board(), score_tracker_full_board(), score_tracker_full_board()]
-        self.alpha = 0.1
+        self.alpha = 0.0025
         
     
     def get_move_from_score(self, board):
@@ -155,6 +157,7 @@ class QLearningAgent:
         the action with the max score
         """
         bestAction = None
+        
         score = -float('inf')
         for move in moves:
             new_board = perform_move(board, move)[0]
@@ -164,9 +167,9 @@ class QLearningAgent:
             if new_score > score:
                 bestAction = move
                 score = new_score
-            if new_score == score:
-                choice = random.choice([move, bestAction]) 
-                bestAction = choice
+            #if new_score == score:
+            #    choice = random.choice([move, bestAction]) 
+            #    bestAction = choice
         
         return bestAction
     
@@ -196,10 +199,16 @@ class QLearningAgent:
          self.scoreDictionary[action].set_score(startState, score)
          
         
-
+def get_max_tile(board):
+    max_tile = 0
+    for i in range(len(board)):
+        for j in range(len(board[i])):
+            if board[i][j] > max_tile:
+                max_tile = board[i][j]
+    return max_tile
 
 def play_game(iterations, learning_enabled, agent):
-   
+    max_tiles = np.zeros(iterations)
     scores = np.zeros(iterations)
     for i in range(iterations):
         board = new_game(4)
@@ -224,28 +233,37 @@ def play_game(iterations, learning_enabled, agent):
             #print()
             board = nextboard
             #print(np.array(board))
-            if game_state(board) == 'lose':
+            if game_state(board) == 'lose' :
                     #print(np.array(board))
                 #print()
-                print(f"Game {i} score: {scores[i]}")
+                if i % 1000 == 0:
+                    print(f"Game {i} score: {scores[i]}")
                 #print()
                 
-                print(np.array(board))
+                max_tiles[i] = get_max_tile(board)
                 lost = True
                 continue
             
+    print(f'Scores: {scores}')
+    print(f'Max tiles: {max_tiles}')
     print(f'Average score: {scores.mean()}')
+    print(f'Standard Deviation of scores: {scores.std()}')
+    print('How often agent reached tile:')
+    tile = int(max_tiles.max())
+    while tile >= 2:
+        print(f'{tile}: {np.sum(max_tiles >= tile) / iterations}')
+        tile = int(tile / 2)
     
     
     
     
 def main():
     agent  = QLearningAgent() 
-    learning_games = 1000
+   
     play_game(learning_games, True, agent)
     print()
     print()
-    real_games = 30
+    
     play_game(real_games, False, agent)
    
 
