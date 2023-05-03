@@ -32,7 +32,7 @@ def max_value(board, current_depth, max_depth):
 def expect_value(board, current_depth, max_depth):
     empty_cells = get_empty_cells(board)
     expected_value = 0
-    chance = 1 / len(empty_cells)
+    chance = 1 / (len(empty_cells))
     for cell in empty_cells:
         new_value, _ = expect_value2(board, cell, current_depth + 1, max_depth)
         expected_value += (chance * new_value)
@@ -90,9 +90,9 @@ def evaluation_function(board):
     for j in range(len(board)):
         for i in range(1, len(board[j])):
             if board[i - 1][j] > board[i][j]:
-                up_monotonicity += board[i - 1][j] - board[i][j]
+                up_monotonicity += board[i - 1][j] -board[i][j]
             else:
-                down_monotonicity += board[i][j] - board[i - 1][j]
+                down_monotonicity += board[i][j]-board[i - 1][j]
     if up_monotonicity < down_monotonicity:
         vertical_monotonicity = up_monotonicity
     else:
